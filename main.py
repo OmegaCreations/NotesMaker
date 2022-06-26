@@ -11,6 +11,7 @@ import threading
 import pyperclip
 import keyboard
 from pathlib import Path  
+from PIL import Image, ImageTk
 import fpdf
 
 
@@ -40,11 +41,23 @@ class App():
         # styling
         self.apptext_color = "#8c8c8e"  
         pyglet.font.add_file('./font/Roboto-Regular.ttf') 
+        
+        # window properties
+        self.isfullscreen = False
+        self.map = 0
 
         # saves
         self.save_location = ""
         self.save_modified = False
         
+    def frame_mapped(self, event=None):
+        if self.map == 5:
+            self.root.update_idletasks()
+            self.root.deiconify()
+            self.root.overrideredirect(True)
+            self.map = 0
+        else:
+            self.map += 1
     
     # moving the window
     def move_window(self, event):
@@ -66,7 +79,7 @@ class App():
             else:
                 self.save_file()
                 
-        
+    # open existing txt file TODO dont open other extensions
     def open_file(self):
         if not self.save_modified:       
             try:            
@@ -139,15 +152,51 @@ class App():
         pdf.output(f"{Path(self.save_location).name}.pdf")
         Path(f"{Path(self.save_location).name}.pdf").rename(f"{self.save_location}.pdf") # move file
     
+    # exit window
+    def exit(self):
+        if not self.save_modified:
+            self.root.destroy()
+        
+        else:
+            answer = messagebox.askquestion("Exit NoteMaker",
+                "Do you want to save file before exit?")
+            
+            if answer != "yes":
+                self.root.destroy()
+            else:
+                self.save_file()
+                self.root.destroy()
+                
+    # fullscreen and maximize window
+    def fullscreen(self):
+        if self.isfullscreen:  
+            #make the window fullscreen 
+            self.root.state(newstate='normal')
+            self.root.geometry('1280x720')
+            self.isfullscreen = False
+        else:
+            # for make the window maximize or open
+            self.root.state(newstate='zoomed')
+            self.isfullscreen = True
+            
+    def minimize(self):
+        self.map = 0
+        self.root.update_idletasks()
+        self.root.overrideredirect(False)
+        self.root.iconify()
+    
     # main UI setup
     def uiSetup(self):
         self.root = Tk()
-        self.root.overrideredirect(1)
+        self.root.overrideredirect(True)
         self.root.eval('tk::PlaceWindow . center') # Placing the window in the center of the screen
         self.root.title("Note Taker")
         self.root.geometry('1280x720') # resolution of screen
         self.root.config(background='#f8f9fa')
-
+        
+        # binds
+        self.root.bind("<Map>", self.frame_mapped)
+        
         canvas = Canvas(self.root, highlightthickness=0)
         canvas.pack(fill=BOTH, expand=1)
 
@@ -243,20 +292,43 @@ class App():
         button_pdf.pack(side=LEFT)
 
         # exit button
+        exit_img = ImageTk.PhotoImage(Image.open('./img/exit.png').convert("RGBA"))
         button_exit = Button(menubar, 
                             bd = 0, 
                             bg = "white",
-                            fg = self.apptext_color,
-                            highlightcolor = "#f1f3f4",
-                            padx = 30,
-                            pady = 5,
-                            height = 2,
+                            highlightcolor = "white",
                             justify= CENTER,
-                            text = "Exit",
-                            font = ('Roboto', 12),
-                            command=self.root.destroy, # close window
+                            image = exit_img,
+                            command=self.exit, # close window
                             )
-        button_exit.pack(side=RIGHT)
+        button_exit.image = exit_img
+        button_exit.pack(side=RIGHT, pady=5, padx = 15)
+        
+        # fullscreen window button
+        fullscreen_img = ImageTk.PhotoImage(Image.open('./img/fullscreen.png').convert("RGBA"))
+        button_fullscreen = Button(menubar, 
+                            bd = 0, 
+                            bg = "white",
+                            highlightcolor = "white",
+                            justify= CENTER,
+                            image = fullscreen_img,
+                            command=self.fullscreen, # close window
+                            )
+        button_fullscreen.image = fullscreen_img
+        button_fullscreen.pack(side=RIGHT, pady=5, padx = 15)
+        
+        # minimize window button
+        minimize_img = ImageTk.PhotoImage(Image.open('./img/minimize.png').convert("RGBA"))
+        button_minimize = Button(menubar, 
+                            bd = 0, 
+                            bg = "white",
+                            highlightcolor = "white",
+                            justify= CENTER,
+                            image = minimize_img,
+                            command=self.minimize, # close window
+                            )
+        button_minimize.image = minimize_img
+        button_minimize.pack(side=RIGHT, pady=5, padx = 15)
 
         # text frame ----------------------------
         textplain = Frame(
