@@ -26,7 +26,7 @@ def app_main_logic(text_area):
 def handle_selection(text_area):
     pyautogui.hotkey('ctrl', 'c')
     s = pyperclip.paste() # get text from clipboard
-    text_area.insert(INSERT, f'\n\n{s}') # add text to textbox
+    text_area.insert(INSERT, f'\n\n{s}') # add text to text_area
 
 # check shortcut pressed TODO could add more shortcuts in future
 def _shortcut_used(text_area):
@@ -48,8 +48,9 @@ class App():
         self.binds()
         self.canvases()
         self.frames()
+        self.icons()
         self.widgets()
-        self.textBox()
+        self.text_area()
         self.buttons()
         self.set_tracing()
     
@@ -59,14 +60,20 @@ class App():
         self.apptext_color = "#8c8c8e"  
         pyglet.font.add_file('./font/Roboto-Regular.ttf') 
         
+        # window properties
+        self.isfullscreen = False
+        self.map = 0
+        
+        # text attributes
+        self.boldOn = False
+        self.italicOn = False
+        self.underlineOn = False
+        self.overstrikeOn = False
+
         self.font_family = StringVar()
         self.font_family.set("Arial")
         self.font_size = IntVar()
         self.font_size.set(12)
-        
-        # window properties
-        self.isfullscreen = False
-        self.map = 0
 
         # saves
         self.save_location = ""
@@ -125,9 +132,36 @@ class App():
             fill = 'y'
             )
         self.textplain.pack_propagate(0)
+    
+    # icons loader
+    def icons(self):
+        im1 = Image.open('./img/exit.png').convert('RGBA')
+        # using master=... helps with "pyphoto4 not found" error
+        self.exit_img = ImageTk.PhotoImage(image = im1, master = self.canvas) 
+        
+        im2 = Image.open('./img/fullscreen.png').convert("RGBA")
+        self.fullscreen_img = ImageTk.PhotoImage(image = im2, master = self.canvas)
+        
+        im3 = Image.open('./img/minimize.png').convert("RGBA")
+        self.minimize_img = ImageTk.PhotoImage(image = im3, master = self.canvas)
+        
+        im4 = Image.open('./img/bold.png').convert("RGBA")
+        self.bold_icon = ImageTk.PhotoImage(image = im4, master = self.canvas)
+        
+        im5 = Image.open('./img/italic.png').convert("RGBA")
+        self.italic_icon = ImageTk.PhotoImage(image = im5, master = self.canvas)
+        
+        im6 = Image.open('./img/underline.png').convert("RGBA")
+        self.underline_icon = ImageTk.PhotoImage(image = im6, master = self.canvas)
+        
+        im7 = Image.open('./img/strike-through.png').convert("RGBA")
+        self.strikethrough_icon = ImageTk.PhotoImage(image = im7, master = self.canvas)
+        
+        im8 = Image.open('./img/highlight.png').convert("RGBA")
+        self.highlight_icon = ImageTk.PhotoImage(image = im8, master = self.canvas)
 
     # main text box
-    def textBox(self):
+    def text_area(self):
         self.text_area = Text(
             self.textplain, 
             bg = "white", 
@@ -154,14 +188,53 @@ class App():
         self.font_combo = ttk.Combobox(self.style_menubar, width=28, textvariable=self.font_family, state='readonly')
         self.font_combo['values'] = self.font_tuple
         self.font_combo.current(self.font_tuple.index(self.font_family.get()))
-        print(self.font_combo['values'])
         self.font_combo.grid(row=0, column=0, padx=2, pady=8)
         
         self.size_tuple = tuple(range(8,80,4))
         self.size_combo = ttk.Combobox(self.style_menubar, width=20, textvariable=self.font_size, state='readonly')
         self.size_combo['values'] = self.size_tuple
         self.size_combo.current(self.size_tuple.index(self.font_size.get()))
-        self.size_combo.grid(row=0, column=1, padx=5, pady=8)
+        self.size_combo.grid(row=0, column=1, padx=8, pady=8)
+        
+        self.bold = Button(self.style_menubar, image=self.bold_icon,
+                            bd = 0, 
+                            bg = "white",
+                            highlightcolor = "white",
+                            justify= CENTER,
+							command=lambda : self.configure_text('bold'))
+        self.bold.grid(row=0, column=2, sticky='W', padx=3, pady=3)
+
+        self.italic = Button(self.style_menubar, image=self.italic_icon,
+                            bd = 0, 
+                            bg = "white",
+                            highlightcolor = "white",
+                            justify= CENTER,
+							command=lambda : self.configure_text('italic'))
+        self.italic.grid(row=0, column=3, sticky='W', padx=3, pady=3)
+
+        self.underline = Button(self.style_menubar, image=self.underline_icon, 
+                            bd = 0, 
+                            bg = "white",
+                            highlightcolor = "white",
+                            justify= CENTER,
+							command=lambda : self.configure_text('underline'))
+        self.underline.grid(row=0, column=4, sticky='W', padx=3, pady=3)
+
+        self.strikethrough = Button(self.style_menubar, image=self.strikethrough_icon,
+                            bd = 0, 
+                            bg = "white",
+                            highlightcolor = "white",
+                            justify= CENTER,
+							command=lambda : self.configure_text('strikethrough'))
+        self.strikethrough.grid(row=0, column=5, sticky='W', padx=3, pady=3)
+
+        self.highlight = Button(self.style_menubar, image=self.highlight_icon,
+                            bd = 0, 
+                            bg = "white",
+                            highlightcolor = "white",
+                            justify= CENTER,
+							command=lambda : self.configure_text('highlight'))
+        self.highlight.grid(row=0, column=6, sticky='W', padx=3, pady=3)
     
     # buttons
     def buttons(self):
@@ -244,16 +317,6 @@ class App():
                             command=self.export_pdf
                             )
         button_pdf.pack(side=LEFT)
-        
-        # TODO take icons to other function ============================================================================= TODO
-        im1 = Image.open('./img/exit.png').convert('RGBA')
-        exit_img = ImageTk.PhotoImage(image = im1, master = self.canvas)
-        
-        im2 = Image.open('./img/fullscreen.png').convert("RGBA")
-        fullscreen_img = ImageTk.PhotoImage(image = im2, master = self.canvas)
-        
-        im3 = Image.open('./img/minimize.png').convert("RGBA")
-        minimize_img = ImageTk.PhotoImage(image = im3, master = self.canvas)
 
         # exit button
         button_exit = Button(self.menubar, 
@@ -261,11 +324,11 @@ class App():
                             bg = "white",
                             highlightcolor = "white",
                             justify= CENTER,
-                            image = exit_img,
+                            image = self.exit_img,
                             command=self.exit, # close window
                             )
         button_exit.pack(side=RIGHT, pady=5, padx = 15)
-        button_exit.image = exit_img
+        button_exit.image = self.exit_img
         
         # fullscreen window button
         button_fullscreen = Button(self.menubar, 
@@ -273,10 +336,10 @@ class App():
                             bg = "white",
                             highlightcolor = "white",
                             justify= CENTER,
-                            image = fullscreen_img,
+                            image = self.fullscreen_img,
                             command=self.fullscreen, # close window
                             )
-        button_fullscreen.image = fullscreen_img
+        button_fullscreen.image = self.fullscreen_img
         button_fullscreen.pack(side=RIGHT, pady=5, padx = 15)
         
         # minimize window button
@@ -285,10 +348,10 @@ class App():
                             bg = "white",
                             highlightcolor = "white",
                             justify= CENTER,
-                            image = minimize_img,
+                            image = self.minimize_img,
                             command=self.minimize, # close window
                             )
-        button_minimize.image = minimize_img
+        button_minimize.image = self.minimize_img
         button_minimize.pack(side=RIGHT, pady=5, padx = 15)
         
         
@@ -303,11 +366,76 @@ class App():
     # change font
     def change_font(self, var, indx, mode):
         self.text_area.configure(font=(self.font_family.get(), self.font_size.get())) # TODO dont change whole text globally!!!
+        
+        if self.boldOn:
+            self.configure_text('bold')
+        if self.italicOn:
+            self.configure_text('italic')
+        if self.underlineOn:
+            self.configure_text('underline')
+        if self.overstrikeOn:
+            self.configure_text('strikethrough')
     
     # change font style
     def change_font_style(self, type):
         self.text_area.configure(font=(self.font_family.get(), self.font_size.get(), type))
     
+    def configure_text(self, tag):
+        selection = self.text_area.tag_ranges(SEL)
+        if selection:
+            current_tags = self.text_area.tag_names("sel.first")
+            if tag == 'bold':
+                self.text_area.tag_configure('bold', font=(self.font_family.get(), self.font_size.get(), 'bold'))
+            if tag == 'italic':
+                self.text_area.tag_configure('italic', font=(self.font_family.get(), self.font_size.get(), 'italic'))
+            if tag == 'underline':
+                self.text_area.tag_configure('underline', font=(self.font_family.get(), self.font_size.get(), 'underline'))
+            if tag == 'strikethrough':
+                self.text_area.tag_configure('strikethrough', font=(self.font_family.get(), self.font_size.get(), 'overstrike'))
+
+            if tag in current_tags:
+                self.text_area.tag_remove(tag, "sel.first", "sel.last")
+            else:
+                self.text_area.tag_add(tag, "sel.first", "sel.last")
+        else:
+            text_property = font.Font(font = self.text_area['font'])
+            if tag == 'bold':
+                if text_property.actual()['weight'] =='normal':
+                    self.change_font_style('bold')
+                    self.boldOn = True
+                    self.bold['bg'] = 'cyan3'
+                if text_property.actual()['weight'] =='bold':
+                    self.change_font_style('normal')
+                    self.boldOn = False
+                    self.bold['bg'] = 'white'
+            elif tag == 'italic':
+                if text_property.actual()['slant'] =='roman':
+                    self.change_font_style('italic')
+                    self.italicOn = True
+                    self.italic['bg'] = 'cyan3'
+                if text_property.actual()['slant'] =='italic':
+                    self.change_font_style('roman')
+                    self.italicOn = False
+                    self.italic['bg'] = 'white'
+            elif tag == 'underline':
+                if text_property.actual()['underline'] ==0:
+                    self.change_font_style('underline')
+                    self.underlineOn = True
+                    self.underline['bg'] = 'cyan3'
+                if text_property.actual()['underline'] ==1:
+                    self.change_font_style('normal')
+                    self.underlineOn = False
+                    self.underline['bg'] = 'white'
+            elif tag == 'strikethrough':
+                if text_property.actual()['overstrike'] ==0:
+                    self.change_font_style('overstrike')
+                    self.overstrikeOn = True
+                    self.strikethrough['bg'] = 'cyan3'
+                if text_property.actual()['overstrike'] ==1:
+                    self.change_font_style('normal')
+                    self.overstrikeOn = False
+                    self.strikethrough['bg'] = 'white'
+
     # moving the window
     def move_window(self, event):
         x, y = self.root.winfo_pointerxy()
@@ -344,7 +472,7 @@ class App():
              
     # new file setup
     def new_file(self):
-        answer = messagebox.askquestion("Update TextBox",
+        answer = messagebox.askquestion("Update text_area",
                 "Are you sure you want to create a new file? Any unsaved changed will be lost!")
         if answer != "yes":
             return
@@ -357,11 +485,11 @@ class App():
             else:
                 self.save_file()
                 
-    # open existing txt file TODO dont open other extensions
+    # open existing txt file
     def open_file(self):
         if not self.save_modified:       
             try:            
-                self.save_location = filedialog.askopenfile(filetypes = (("Text files", "*.txt"), ("All files", "*.*"))).name      
+                self.save_location = filedialog.askopenfile(filetypes = [("Text files", "*.txt")]).name      
                 
                 with open(self.save_location, mode='r', encoding='utf-8') as f:             
                     content = f.read()
@@ -399,7 +527,7 @@ class App():
     # save file to new location
     def save_file_as(self):
         try:
-            self.save_location = filedialog.asksaveasfile(filetypes = (("Text files", "*.txt"), ("All files", "*.*"))).name
+            self.save_location = filedialog.asksaveasfile(filetypes = [("Text files", "*.txt")], defaultextension=".txt").name
             self.save_modified = False
         except Exception as e:
             print(e)
